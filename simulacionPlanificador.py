@@ -3,11 +3,13 @@ from collections import deque
 import random
 
 MAX_SERVICELIST_SIZE = 4
-MAX_SERVICETIME = 10
+MAX_SERVICETIME = 35
 MAX_TIMEOUT = 150
-TASKS_CREATED = 2
-MAX_TIME = 21
-FLAG = True
+TASKS_CREATED = 30
+MAX_TIME = 1000
+ALGO = "fcfs"
+#ALGO = "sjf"
+INTERVALO_LOG = 10
 
 
 class Tarea:
@@ -64,16 +66,13 @@ class Tarea:
         return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, priority: {self.priority}, timeout: {self.timeOut}, tasktype: {self.taskType}}}\n'
         #return f'{{\n name: {self.name},\n time: {self.serviceTime},\n serviceList: {self.serviceList},\n priority: {self.priority},\n timeout: {self.timeOut},\n tasktype: {self.taskType}\n}}'
 
-    # # Definimios como comparar si son o no la misma tarea
-    # def __eq__(self, other):
-    #     return self.name == other.name
 
 
 class Planificador:
     """ Cola de tareas """
     # Constructor
-    def __init__(self, flag):
-        self.flag = flag
+    def __init__(self, ALGO):
+        self.algorithm = ALGO
         self.planQueue = deque(maxlen=TASKS_CREATED)
         self.planList = deque(maxlen=TASKS_CREATED)
         self.waitingQueue = deque(maxlen=TASKS_CREATED)
@@ -81,13 +80,14 @@ class Planificador:
 
     # Poner una tarea en la cola de planificacion
     def putTaskPlanQueue(self, task):
-        if (self.flag):
+        if (self.algorithm == "fcfs"):
             # FCFS
-            self.planQueue.append(task)
-        else:
+            self.fcfs(task)
+        elif (self.algorithm == "sjf"):
             # SJF
-            pass
-
+            self.sjf(task)
+        else:
+            raise Exception("Planificador no selecionado. Revise la constante ALGO")
 
         # print(f'Tarea agregada: {task}')
 
@@ -123,6 +123,23 @@ class Planificador:
             self.putTaskPlanQueue(task)
         return 0
     
+    # Algoritmo FCFS
+    def fcfs(self, task):
+        self.planQueue.append(task)
+
+    # Algoritmo SJF
+    def sjf(self, task):
+        serviceTime = task.serviceTime
+        queueList = list(self.planQueue)
+        i = 0
+        try: 
+            while (queueList[i].serviceTime < serviceTime):
+                i += 1              
+            self.planQueue.insert(i, task)
+        except:
+            self.planQueue.append(task)   
+            
+
     # Avanza el tiempo en 1 y las tareas que yas terminaron de esperar las mueve
     # a la cola planQueue
     def schedule(self, time):
@@ -141,13 +158,13 @@ class Planificador:
                         tarea.serviceList.popleft()
                         if (tarea.serviceList): # Si le quedan operaciones
                             # Pasa a planificado
-                            print("Tiene operaciones, pasa a planificador")
+                            #print("Tiene operaciones, pasa a planificador")
                             tempList.append(tarea)
                             self.putTaskPlanQueue(tarea)
                         else:
                             # Pasa a finalizado
                             tempList.append(tarea)
-                            print("Ya no tiene operaciones, pasa a finalizado")
+                            #print("Ya no tiene operaciones, pasa a finalizado")
                             self.putTaskFinishedQueue(tarea, time)
                 else:
                     print('No debería estar aca')
@@ -156,7 +173,6 @@ class Planificador:
             for tarea in tempList:
                 self.removeTaskWaitingQueue(tarea)
 
-                
 
 class Persona:
     """ Clase Persona que realiza trabajos """
@@ -177,7 +193,7 @@ def main():
     # print(f'Set 1: {set1_tareas}')
 
     print("Tests de planificación FCFS")
-    planFCFS = Planificador(FLAG)
+    planFCFS = Planificador(ALGO)
     planFCFS.addTasks(set1_tareas)
     planFCFS.printTasks()
 
@@ -188,9 +204,10 @@ def main():
 
     # SIMULACION DE TIEMPO
     for time in range(MAX_TIME):
-        print(f'\n///////////////////////////////// Tiempo: {time} /////////////////////////////////')
+        if ( time % INTERVALO_LOG == 0):
+            print(f'\n///////////////////////////////// Tiempo: {time} /////////////////////////////////')
+            print(f'Trabajador trabajando en: {trabajador.task}')
         
-        print(f'Trabajador trabajando en: {trabajador.task}')
         if (trabajador.task != None):
             # Teniendo una tarea asignada
             if ( tarea.workDone < workToBeDone ): # Si el trabajo realizado es menor al necesario, trabajar
@@ -210,12 +227,19 @@ def main():
             workToBeDone = tarea.serviceList.popleft()
             trabajador.work()
 
+        # Vemos el estado de las colas cada 100 tick del reloj
+        if ( time % INTERVALO_LOG == 0 ):
+            print(f'FinCiclo-PlanQ: {planFCFS.planQueue}\n-------------------------')
+            print(f'FinCiclo-WaitQ: {planFCFS.waitingQueue}\n-------------------------')
+            print(f'FinCiclo-FiniQ: {planFCFS.finishedQueue}\n-------------------------')
 
-        # Vemos el estado de las colas al final de cada tick del reloj
-        print(f'FinCiclo-PlanQ: {planFCFS.planQueue}\n-------------------------')
-        print(f'FinCiclo-WaitQ: {planFCFS.waitingQueue}\n-------------------------')
-        print(f'FinCiclo-FiniQ: {planFCFS.finishedQueue}\n-------------------------')
+        # Reprogramamos tareas
         planFCFS.schedule(time)
+    
+    print(f'--------------- FIN DEL TIEMPO SIMULADO ---------------')
+    print(f'FIN-PlanQ: {planFCFS.planQueue}\n-------------------------')
+    print(f'FIN-WaitQ: {planFCFS.waitingQueue}\n-------------------------')
+    print(f'FIN-FiniQ: {planFCFS.finishedQueue}\n-------------------------')
 
 
 
