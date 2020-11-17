@@ -5,10 +5,10 @@ import random
 MAX_SERVICELIST_SIZE = 4    # Maxima canitad de particiones realizadas al tiempo de servicio
 MAX_SERVICETIME = 400       # Maximo Tiempo de Servicio de una tarea
 MAX_TIMEOUT = 150           # Maximo Tiempo de Timeout de una tarea
-SETS = 1                    # Cantidad de sets generados
+SETS = 2                    # Cantidad de sets generados
 TASKS_CREATED = 10          # Cantidad de tareas creadas por cada set
-DIA_TRABAJO = 1000          # Cuantos ciclos dura un dia de trabajo
-MAX_TIME = 500              # Cuantos ciclos dura la simulacion
+DIA_TRABAJO = 500           # Cuantos ciclos dura un dia de trabajo
+MAX_TIME = 1600             # Cuantos ciclos dura la simulacion
 ALGO = "fcfs"               # Algoritmo de planificacion FirstComeFirstServe
 #ALGO = "sjf"               # Algoritmo de planificacion ShortesJobFirst
 INTERVALO_LOG = 500         # Cada cuantos ciclos imprimir log
@@ -52,15 +52,16 @@ class Tarea:
         return lista
     
     ### Generador de tareas aleatorias
-    def createRandomList(n_val):
+    def createRandomList(n_val, setNumber):
         task_list = []
         for n in range(n_val):
+            name = n + (TASKS_CREATED * setNumber)
             serviceTime = random.randint(1,MAX_SERVICETIME)
             priority = random.randint(0,5)
             urgency = random.random() # random entre 0 y 1
             timeout = random.randint(1,MAX_TIMEOUT) # Si no se ejecuta se da por no completada
             tasktype = random.randrange(0,5) # Simulamos 5 tipos de tareas
-            task = Tarea(n, serviceTime, priority, urgency, timeout, tasktype)
+            task = Tarea(name, serviceTime, priority, urgency, timeout, tasktype)
             
             task_list.append(task)
         #print("Set de tareas generado correctamente")
@@ -76,8 +77,8 @@ class Tarea:
 
     ### Representacion de la tarea como string
     def __repr__(self):
-        return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, startTime: {self.startTime}, finishTime: {self.finishTime}, waitingTime: {self.waitingTime}, workDone: {self.workDone}, serviceListCopy: {list(self.serviceListCopy)}}}\n'
-        #return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, priority: {self.priority}, timeout: {self.timeOut}, tasktype: {self.taskType}}}\n'
+        return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {list(self.serviceList)}, startTime: {self.startTime}, finishTime: {self.finishTime}, waitingTime: {self.waitingTime}, workDone: {self.workDone}, serviceListCopy: {list(self.serviceListCopy)}}}\n'
+        #return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {list(self.serviceList)}, priority: {self.priority}, timeout: {self.timeOut}, tasktype: {self.taskType}}}\n'
 
 
 
@@ -236,15 +237,19 @@ class Persona:
         self.task.workDone += 1
 
 
+
 def main():
     """ Tests de planificación """
-    print("Generamos set de pruebas 1")
-    set1_tareas = Tarea.createRandomList(TASKS_CREATED)
-    # print(f'Set 1: {set1_tareas}')
+    print("Generamos sets de pruebas")
+    setsTareas = []
+    for i in range(SETS):
+        setsTareas.append(Tarea.createRandomList(TASKS_CREATED, i))
+    
+    print(f'setsTareas: {setsTareas}')
 
     print(f'Tests de planificación {ALGO}')
     planFCFS = Planificador(ALGO)
-    planFCFS.addTasks(set1_tareas, 0)
+    planFCFS.addTasks(setsTareas.pop(), 0)
     planFCFS.printTasks()
 
     trabajador = Persona("Trabajador 1")
@@ -254,6 +259,12 @@ def main():
 
     # SIMULACION DE TIEMPO
     for time in range(MAX_TIME):
+        # Si paso 1 dia, agregamos mas tareas
+        if ( time % DIA_TRABAJO == 0 and setsTareas):
+            print(f'\n********************* NUEVO DIA: {time} *************************')
+            planFCFS.addTasks(setsTareas.pop(), time)
+
+        # Imprimimos avance cada cierto intervalo
         if ( time % INTERVALO_LOG == 0):
             print(f'\n///////////////////////////////// Tiempo: {time} /////////////////////////////////')
             print(f'Trabajador trabajando en: {trabajador.task}')
@@ -285,7 +296,13 @@ def main():
 
         # Reprogramamos tareas
         planFCFS.schedule(time)
-    
+
+
+
+
+
+
+
     print(f'\n--------------- FIN DEL TIEMPO SIMULADO ---------------')
     print(f'FIN-PlanQ: {planFCFS.planQueue}\n-------------------------')
     print(f'FIN-WaitQ: {planFCFS.waitingQueue}\n-------------------------')
