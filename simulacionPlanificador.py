@@ -191,53 +191,34 @@ class Planificador:
             for tarea in self.planQueue:
                 tarea.waitingTime += 1
 
-
-    ### Imprimir de forma legible para humanos las estadisticas de la tareas
-    def prettyPrintStatistics(self):
+    ### Imprimir estadisticas de la tareas
+    ### Por omision imprime "pretty" legible para humanos
+    ### poner raw en true devuelve lista separada por ";"
+    def printStatistics(self, raw):
         print(f'\nCOLA TAREAS PLANIFICADAS')
+        if raw:
+            print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
         if (self.planQueue):
             for tarea in self.planQueue:
-                tarea.prettyStats()
+                tarea.rawStats() if (raw) else tarea.prettyStats()
         else:
             print(f'No quedaron tareas en esta cola')
 
         print(f'\nCOLA TAREAS ESPERANDO')
+        if raw:
+            print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
         if (self.waitingQueue):
             for tarea in self.waitingQueue:
-                tarea.prettyStats()
+                tarea.rawStats() if (raw) else tarea.prettyStats()
         else:
             print(f'No quedaron tareas en esta cola')
 
         print(f'\nCOLA TAREAS FINALIZADAS')
+        if raw:
+            print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
         if (self.finishedQueue):
             for tarea in self.finishedQueue:
-                tarea.prettyStats()
-        else:
-            print(f'No quedaron tareas en esta cola')
-
-    ### Imprimir de forma legible para humanos las estadisticas de la tareas
-    def rawPrintStatistics(self):
-        print(f'\nCOLA TAREAS PLANIFICADAS')
-        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
-        if (self.planQueue):
-            for tarea in self.planQueue:
-                tarea.rawStats()
-        else:
-            print(f'No quedaron tareas en esta cola')
-
-        print(f'\nCOLA TAREAS ESPERANDO')
-        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
-        if (self.waitingQueue):
-            for tarea in self.waitingQueue:
-                tarea.rawStats()
-        else:
-            print(f'No quedaron tareas en esta cola')
-
-        print(f'\nCOLA TAREAS FINALIZADAS')
-        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
-        if (self.finishedQueue):
-            for tarea in self.finishedQueue:
-                tarea.rawStats()
+                tarea.rawStats() if (raw) else tarea.prettyStats()
         else:
             print(f'No quedaron tareas en esta cola')
 
@@ -311,10 +292,10 @@ def main():
     print(f'FIN-FiniQ: {planFCFS.finishedQueue}\n-------------------------')
 
     print(f'\n--------------- ESTADISTICAS PRETTY ---------------')
-    planFCFS.prettyPrintStatistics()
+    planFCFS.printStatistics(raw=False)
 
     print(f'\n--------------- ESTADISTICAS RAW ---------------')
-    planFCFS.rawPrintStatistics()
+    planFCFS.printStatistics(raw=True)
 
 
 if __name__ == "__main__":
