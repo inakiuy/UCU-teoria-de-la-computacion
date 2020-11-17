@@ -6,15 +6,16 @@ MAX_SERVICELIST_SIZE = 4
 MAX_SERVICETIME = 35
 MAX_TIMEOUT = 150
 TASKS_CREATED = 30
-MAX_TIME = 1000
+MAX_TIME = 500
 ALGO = "fcfs"
 #ALGO = "sjf"
-INTERVALO_LOG = 10
+INTERVALO_LOG = 100
+DIA_TRABAJO = 1000
 
 
 class Tarea:
     """ Clase tarea """
-    # Constructor
+    ### Constructor
     def __init__(self, pname, pserviceTime, ppriority, purgency, ptimeOut, ptaskType):
         # Propiedades basicas
         self.name = pname
@@ -29,7 +30,10 @@ class Tarea:
         self.waitingTime = 0
         self.workDone = 0
         self.waitingQueueArriveTime = None
-    
+        self.serviceListCopy = self.serviceList.copy()
+
+    ### Particiona de forma aleatoria un tiempo de servicio
+    ### para simular tareas que necesitan espera    
     def randomServiceList(pserviceTime):
         list_size = random.randrange(1,MAX_SERVICELIST_SIZE)                
         lista = deque(maxlen=list_size)
@@ -61,24 +65,31 @@ class Tarea:
         #print("Set de tareas generado correctamente")
         return task_list
 
-    # Representacion de la tarea como string
+    ### Imprime estadisticas de forma legible
+    def prettyStats(self):
+        print(f'Tarea: {self.name}\n\tstart: {self.startTime}\n\tfinish: {self.finishTime}\n\twaiting: {self.waitingTime}\n\twork: {self.workDone}\n\tserviceList: {list(self.serviceListCopy)}')
+
+    ### Imprime estadisticas crudas
+    def rawStats(self):
+        print(f'{self.name};{self.startTime};{self.finishTime};{self.waitingTime};{self.workDone};{list(self.serviceListCopy)}')
+
+    ### Representacion de la tarea como string
     def __repr__(self):
-        return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, priority: {self.priority}, timeout: {self.timeOut}, tasktype: {self.taskType}}}\n'
-        #return f'{{\n name: {self.name},\n time: {self.serviceTime},\n serviceList: {self.serviceList},\n priority: {self.priority},\n timeout: {self.timeOut},\n tasktype: {self.taskType}\n}}'
+        return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, startTime: {self.startTime}, finishTime: {self.finishTime}, waitingTime: {self.waitingTime}, workDone: {self.workDone}, serviceListCopy: {list(self.serviceListCopy)}}}\n'
+        #return f'\n{{name: {self.name}, time: {self.serviceTime}, serviceList: {self.serviceList}, priority: {self.priority}, timeout: {self.timeOut}, tasktype: {self.taskType}}}\n'
 
 
 
 class Planificador:
     """ Cola de tareas """
-    # Constructor
+    ### Constructor
     def __init__(self, ALGO):
         self.algorithm = ALGO
         self.planQueue = deque(maxlen=TASKS_CREATED)
-        self.planList = deque(maxlen=TASKS_CREATED)
         self.waitingQueue = deque(maxlen=TASKS_CREATED)
         self.finishedQueue = deque(maxlen=TASKS_CREATED)
 
-    # Poner una tarea en la cola de planificacion
+    ### Poner una tarea en la cola de planificacion
     def putTaskPlanQueue(self, task):
         if (self.algorithm == "fcfs"):
             # FCFS
@@ -91,43 +102,44 @@ class Planificador:
 
         # print(f'Tarea agregada: {task}')
 
-    # Entregar una tarea al usuario dede la cola de planificados
+    ### Entregar una tarea al usuario dede la cola de planificados
     def getTaskPlanQueue(self):
         return self.planQueue.popleft() if (self.planQueue) else None
 
-    # Poner una tarea en la cola de espera
+    ### Poner una tarea en la cola de espera
     def putTaskWaitingQueue(self, task, time):
         task.waitingQueueArriveTime = time
         self.waitingQueue.append(task)
         return 0
 
-    # Eliminar una determinada tarea en la cola de espera
+    ### Eliminar una determinada tarea en la cola de espera
     def removeTaskWaitingQueue(self, task):
         self.waitingQueue.remove(task)
         return 0
 
-    # Poner una tarea en la cola de finalizados
+    ### Poner una tarea en la cola de finalizados
     def putTaskFinishedQueue(self, task, time):
         task.finishTime = time
         self.finishedQueue.append(task)
         return 0
 
-    # Imprimir todas las tareas en la cola
+    ### Imprimir todas las tareas en la cola
     def printTasks(self):
         print(f'Cola de tareas: {self.planQueue}')
         return 0
 
-    # Agregar tareas a la cola de planificacion
-    def addTasks(self, task_list):
+    ### Agregar tareas a la cola de planificacion
+    def addTasks(self, task_list, time):
         for task in task_list:
+            task.startTime = time
             self.putTaskPlanQueue(task)
         return 0
     
-    # Algoritmo FCFS
+    ### Algoritmo FCFS
     def fcfs(self, task):
         self.planQueue.append(task)
 
-    # Algoritmo SJF
+    ### Algoritmo SJF
     def sjf(self, task):
         serviceTime = task.serviceTime
         queueList = list(self.planQueue)
@@ -138,10 +150,9 @@ class Planificador:
             self.planQueue.insert(i, task)
         except:
             self.planQueue.append(task)   
-            
 
-    # Avanza el tiempo en 1 y las tareas que yas terminaron de esperar las mueve
-    # a la cola planQueue
+    # Replanificardor: Avanza el tiempo en 1 y las tareas que yas terminaron
+    # de esperar las mueve a la cola planQueue
     def schedule(self, time):
         #Necesaria por que no puedo modificar las colas mientras itero sobre ellas
         tempList = []
@@ -172,6 +183,63 @@ class Planificador:
             # Elimino las tareas de la cola de espera
             for tarea in tempList:
                 self.removeTaskWaitingQueue(tarea)
+        
+        # A todas las tareas que están planificadas y no se avanzaron
+        # sumarle al waitingTime para estadisticas
+        if (self.planQueue):
+            for tarea in self.planQueue:
+                tarea.waitingTime += 1
+
+
+    ### Imprimir de forma legible para humanos las estadisticas de la tareas
+    def prettyPrintStatistics(self):
+        print(f'\nCOLA TAREAS PLANIFICADAS')
+        if (self.planQueue):
+            for tarea in self.planQueue:
+                tarea.prettyStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
+        print(f'\nCOLA TAREAS ESPERANDO')
+        if (self.waitingQueue):
+            for tarea in self.waitingQueue:
+                tarea.prettyStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
+        print(f'\nCOLA TAREAS FINALIZADAS')
+        if (self.finishedQueue):
+            for tarea in self.finishedQueue:
+                tarea.prettyStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
+    ### Imprimir de forma legible para humanos las estadisticas de la tareas
+    def rawPrintStatistics(self):
+        print(f'\nCOLA TAREAS PLANIFICADAS')
+        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
+        if (self.planQueue):
+            for tarea in self.planQueue:
+                tarea.rawStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
+        print(f'\nCOLA TAREAS ESPERANDO')
+        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
+        if (self.waitingQueue):
+            for tarea in self.waitingQueue:
+                tarea.rawStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
+        print(f'\nCOLA TAREAS FINALIZADAS')
+        print(f'name;startTime;finishTime;waitingTime;workDone;serviceListCopy;')
+        if (self.finishedQueue):
+            for tarea in self.finishedQueue:
+                tarea.rawStats()
+        else:
+            print(f'No quedaron tareas en esta cola')
+
 
 
 class Persona:
@@ -192,9 +260,9 @@ def main():
     set1_tareas = Tarea.createRandomList(TASKS_CREATED)
     # print(f'Set 1: {set1_tareas}')
 
-    print("Tests de planificación FCFS")
+    print(f'Tests de planificación {ALGO}')
     planFCFS = Planificador(ALGO)
-    planFCFS.addTasks(set1_tareas)
+    planFCFS.addTasks(set1_tareas, 0)
     planFCFS.printTasks()
 
     trabajador = Persona("Trabajador 1")
@@ -236,12 +304,16 @@ def main():
         # Reprogramamos tareas
         planFCFS.schedule(time)
     
-    print(f'--------------- FIN DEL TIEMPO SIMULADO ---------------')
+    print(f'\n--------------- FIN DEL TIEMPO SIMULADO ---------------')
     print(f'FIN-PlanQ: {planFCFS.planQueue}\n-------------------------')
     print(f'FIN-WaitQ: {planFCFS.waitingQueue}\n-------------------------')
     print(f'FIN-FiniQ: {planFCFS.finishedQueue}\n-------------------------')
 
+    print(f'\n--------------- ESTADISTICAS PRETTY ---------------')
+    planFCFS.prettyPrintStatistics()
 
+    print(f'\n--------------- ESTADISTICAS RAW ---------------')
+    planFCFS.rawPrintStatistics()
 
 
 if __name__ == "__main__":
