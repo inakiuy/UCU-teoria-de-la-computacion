@@ -75,7 +75,7 @@ class Planificador:
     def __init__(self, flag):
         self.flag = flag
         self.planQueue = deque(maxlen=TASKS_CREATED)
-        self.planList = []
+        self.planList = deque(maxlen=TASKS_CREATED)
         self.waitingQueue = deque(maxlen=TASKS_CREATED)
         self.finishedQueue = deque(maxlen=TASKS_CREATED)
 
