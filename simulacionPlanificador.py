@@ -2,6 +2,7 @@
 from collections import deque
 import random
 
+<<<<<<< HEAD
 SETS = 3                   # Cantidad de sets generados
 TASKS_CREATED = 10          # Cantidad de tareas creadas por cada set
 MAX_SERVICETIME = 100     # Maximo Tiempo de Servicio de una tarea. 28800 = 8h
@@ -12,6 +13,18 @@ MAX_TIME = 3000          # Cuantos ciclos dura la simulacion. SETS * TASKS_CREAT
 ALGO = "fcfs"               # Algoritmo de planificacion FirstComeFirstServe
 #ALGO = "sjf"               # Algoritmo de planificacion ShortesJobFirst
 INTERVALO_LOG = 1500       # Cada cuantos ciclos imprimir log. 
+=======
+SETS = 10                   # Cantidad de sets generados
+TASKS_CREATED = 10          # Cantidad de tareas creadas por cada set
+MAX_SERVICETIME = 28800     # Maximo Tiempo de Servicio de una tarea. 28800 = 8h
+MAX_SERVICELIST_SIZE = 4    # Maxima canitad de particiones realizadas al tiempo de servicio
+MAX_TIMEOUT = 150           # Maximo Tiempo de Timeout de una tarea
+DIA_TRABAJO = 28800         # Cuantos ciclos dura un dia de trabajo
+MAX_TIME = 2880000          # Cuantos ciclos dura la simulacion. SETS * TASKS_CREATED * MAX_SERVICETIME = 2880000 
+ALGO = "fcfs"               # Algoritmo de planificacion FirstComeFirstServe
+#ALGO = "sjf"               # Algoritmo de planificacion ShortesJobFirst
+INTERVALO_LOG = 288000       # Cada cuantos ciclos imprimir log. 
+>>>>>>> d9cc144a3624fd78507f44392b70f527c04d20d9
 
 
 class Tarea:
@@ -240,8 +253,12 @@ class Persona:
 
 def main():
     """ Tests de planificación """
+<<<<<<< HEAD
     print(f'=== TESTS DE PLANIFICADOR {ALGO} ===')
     print(f'Generamos {SETS} sets de pruebas')
+=======
+    print("Generamos sets de pruebas")
+>>>>>>> d9cc144a3624fd78507f44392b70f527c04d20d9
     setsTareas = deque()
     for i in range(SETS):
         setsTareas.append(Tarea.createRandomList(TASKS_CREATED, i))
