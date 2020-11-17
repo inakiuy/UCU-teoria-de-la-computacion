@@ -2,15 +2,16 @@
 from collections import deque
 import random
 
-MAX_SERVICELIST_SIZE = 4
-MAX_SERVICETIME = 35
-MAX_TIMEOUT = 150
-TASKS_CREATED = 30
-MAX_TIME = 500
-ALGO = "fcfs"
-#ALGO = "sjf"
-INTERVALO_LOG = 100
-DIA_TRABAJO = 1000
+MAX_SERVICELIST_SIZE = 4    # Maxima canitad de particiones realizadas al tiempo de servicio
+MAX_SERVICETIME = 400       # Maximo Tiempo de Servicio de una tarea
+MAX_TIMEOUT = 150           # Maximo Tiempo de Timeout de una tarea
+SETS = 1                    # Cantidad de sets generados
+TASKS_CREATED = 10          # Cantidad de tareas creadas por cada set
+DIA_TRABAJO = 1000          # Cuantos ciclos dura un dia de trabajo
+MAX_TIME = 500              # Cuantos ciclos dura la simulacion
+ALGO = "fcfs"               # Algoritmo de planificacion FirstComeFirstServe
+#ALGO = "sjf"               # Algoritmo de planificacion ShortesJobFirst
+INTERVALO_LOG = 500         # Cada cuantos ciclos imprimir log
 
 
 class Tarea:
