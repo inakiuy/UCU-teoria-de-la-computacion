@@ -2,16 +2,16 @@
 from collections import deque
 import random
 
-MAX_SERVICELIST_SIZE = 4    # Maxima canitad de particiones realizadas al tiempo de servicio
-MAX_SERVICETIME = 400       # Maximo Tiempo de Servicio de una tarea
-MAX_TIMEOUT = 150           # Maximo Tiempo de Timeout de una tarea
-SETS = 2                    # Cantidad de sets generados
+SETS = 10                   # Cantidad de sets generados
 TASKS_CREATED = 10          # Cantidad de tareas creadas por cada set
-DIA_TRABAJO = 500           # Cuantos ciclos dura un dia de trabajo
-MAX_TIME = 1600             # Cuantos ciclos dura la simulacion
+MAX_SERVICETIME = 28800     # Maximo Tiempo de Servicio de una tarea. 28800 = 8h
+MAX_SERVICELIST_SIZE = 4    # Maxima canitad de particiones realizadas al tiempo de servicio
+MAX_TIMEOUT = 150           # Maximo Tiempo de Timeout de una tarea
+DIA_TRABAJO = 28800         # Cuantos ciclos dura un dia de trabajo
+MAX_TIME = 2880000          # Cuantos ciclos dura la simulacion. SETS * TASKS_CREATED * MAX_SERVICETIME = 2880000 
 ALGO = "fcfs"               # Algoritmo de planificacion FirstComeFirstServe
 #ALGO = "sjf"               # Algoritmo de planificacion ShortesJobFirst
-INTERVALO_LOG = 500         # Cada cuantos ciclos imprimir log
+INTERVALO_LOG = 288000       # Cada cuantos ciclos imprimir log. 
 
 
 class Tarea:
@@ -87,9 +87,9 @@ class Planificador:
     ### Constructor
     def __init__(self, ALGO):
         self.algorithm = ALGO
-        self.planQueue = deque(maxlen=TASKS_CREATED)
-        self.waitingQueue = deque(maxlen=TASKS_CREATED)
-        self.finishedQueue = deque(maxlen=TASKS_CREATED)
+        self.planQueue = deque(maxlen=TASKS_CREATED * SETS)
+        self.waitingQueue = deque(maxlen=TASKS_CREATED * SETS)
+        self.finishedQueue = deque(maxlen=TASKS_CREATED * SETS)
 
     ### Poner una tarea en la cola de planificacion
     def putTaskPlanQueue(self, task):
@@ -127,12 +127,12 @@ class Planificador:
 
     ### Imprimir todas las tareas en la cola
     def printTasks(self):
-        print(f'Cola de tareas: {self.planQueue}')
+        print(f'Cola de tareas: {list(self.planQueue)}')
         return 0
 
     ### Agregar tareas a la cola de planificacion
-    def addTasks(self, task_list, time):
-        for task in task_list:
+    def addTasks(self, taskList, time):
+        for task in taskList:
             task.startTime = time
             self.putTaskPlanQueue(task)
         return 0
@@ -241,15 +241,13 @@ class Persona:
 def main():
     """ Tests de planificación """
     print("Generamos sets de pruebas")
-    setsTareas = []
+    setsTareas = deque()
     for i in range(SETS):
         setsTareas.append(Tarea.createRandomList(TASKS_CREATED, i))
-    
-    print(f'setsTareas: {setsTareas}')
 
     print(f'Tests de planificación {ALGO}')
     planFCFS = Planificador(ALGO)
-    planFCFS.addTasks(setsTareas.pop(), 0)
+    planFCFS.addTasks(setsTareas.popleft(), 0)
     planFCFS.printTasks()
 
     trabajador = Persona("Trabajador 1")
@@ -260,9 +258,9 @@ def main():
     # SIMULACION DE TIEMPO
     for time in range(MAX_TIME):
         # Si paso 1 dia, agregamos mas tareas
-        if ( time % DIA_TRABAJO == 0 and setsTareas):
+        if ( time != 0 and time % DIA_TRABAJO == 0 and setsTareas):
             print(f'\n********************* NUEVO DIA: {time} *************************')
-            planFCFS.addTasks(setsTareas.pop(), time)
+            planFCFS.addTasks(setsTareas.popleft(), time)
 
         # Imprimimos avance cada cierto intervalo
         if ( time % INTERVALO_LOG == 0):
